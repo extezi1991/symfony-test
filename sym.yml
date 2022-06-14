@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sym
+  namespace: backend
+  labels:
+    app: sym-app
+spec:
+  loadBalancerIP: 10.0.230.48
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: sym-app
+
+
+---
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sym
+  namespace: backend
+  labels:
+    app: sym-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sym-app
+  template:
+    metadata:
+      labels:
+        app: sym-app
+    spec:
+      volumes:
+        - name: sym-pv-storage
+          persistentVolumeClaim:
+            claimName: sym-pv-claim
+      containers:
+      - name: sym
+        image: registry.myhost.com:443/sym:v0.1
+        ports:
+          - name: http
+            containerPort: 80
+            protocol: TCP
+        volumeMounts:
+        - mountPath: "/var/log/apache2/"
+          name: sym-pv-storage

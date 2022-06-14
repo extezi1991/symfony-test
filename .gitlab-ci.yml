@@ -1,0 +1,29 @@
+variables:
+ 
+  SERVER: 127.0.0.1
+  GIT_STRATEGY: clone
+  TEST_IMAGE_NAME: sym
+  PROD_IMAGE_NAME: sym
+  TEST_APP_VERSION: v1.1
+  PROD_APP_VERSION: v0.1
+  REGISTRY_HOST: 127.0.0.1:5000
+  TEST_CONTAINER_NAME: sym1
+##########################################################################################################
+build:
+  stage: build
+  script:
+    - docker build --no-cache -t $TEST_IMAGE_NAME:$TEST_APP_VERSION .
+    - docker run -itd -p 9081:8080 --name $TEST_CONTAINER_NAME $TEST_IMAGE_NAME:$TEST_APP_VERSION
+    - sleep 15
+    - docker tag $TEST_IMAGE_NAME:$TEST_APP_VERSION $REGISTRY_HOST/$PROD_IMAGE_NAME:$PROD_APP_VERSION
+    - docker push $REGISTRY_HOST/$PROD_IMAGE_NAME:$PROD_APP_VERSION
+    - docker stop $TEST_CONTAINER_NAME
+    - docker rm $TEST_CONTAINER_NAME
+############################################################################################################
+deploy:
+  stage: deploy
+  script:
+    - kubectl apply -f sym.yml
+##### Ну или можно по scp закинуть файл на хост с которого уже дэплоить. В этом примере я решил прям с гитлаба задеплоить.
+    - kubectl get pods --all-namespaces
+  when: manual
